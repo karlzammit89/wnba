@@ -51,7 +51,10 @@ def convert_to_et_str(raw_time):
 # =========================
 if mode == "Schedule":
 
-    date_input = st.text_input("Enter date (YYYY-MM-DD)", datetime.now(ZoneInfo("America/New_York")).strftime("%Y-%m-%d"))
+    date_input = st.text_input(
+        "Enter date (YYYY-MM-DD)",
+        datetime.now(ZoneInfo("America/New_York")).strftime("%Y-%m-%d")
+    )
 
     if st.button("Load Games"):
 
@@ -74,55 +77,75 @@ if mode == "Schedule":
 
         events = data.get("events", [])
 
-        if not events:
-            st.warning(f"No WNBA games found for {selected_date}.")
-        else:
-            st.success(f"Found {len(events)} game(s) on {selected_date}")
+        games = []
 
-            for event in events:
-                game_id = event.get("id", "N/A")
-                name = event.get("name", "Unknown Matchup")
-                short_name = event.get("shortName", name)
+        for event in events:
 
-                competitions = event.get("competitions", [{}])
-                comp = competitions[0] if competitions else {}
+            game_id = event.get("id", "N/A")
+            name = event.get("name", "Unknown Matchup")
+            short_name = event.get("shortName", name)
 
-                status = comp.get("status", {})
-                status_detail = status.get("type", {}).get("detail", "")
-                status_state = status.get("type", {}).get("state", "")  # pre / in / post
+            comp = (event.get("competitions") or [{}])[0]
 
-                # Game time
-                date_raw = comp.get("date", "")
-                et_dt = convert_to_et(date_raw)
-                time_str = et_dt.strftime("%H:%M ET") if et_dt else "TBD"
+            status = comp.get("status", {}).get("type", {})
+            status_state = status.get("state", "")
+            status_detail = status.get("detail", "")
 
-                # Score
-                competitors = comp.get("competitors", [])
-                score_parts = []
-                for c in competitors:
-                    team_name = c.get("team", {}).get("abbreviation", "?")
-                    score = c.get("score", "-")
-                    ha = "🏠" if c.get("homeAway") == "home" else "✈️"
-                    score_parts.append(f"{ha} {team_name} {score}")
+            et_dt = convert_to_et(comp.get("date", ""))
+            if not et_dt:
+                continue
 
-                score_str = "  |  ".join(score_parts) if score_parts else "N/A"
+            # filter by selected date (ET)
+            if et_dt.date() != selected_date:
+                continue
 
-                # Status badge
-                if status_state == "in":
-                    badge = "🔴 LIVE"
-                    clock = status.get("displayClock", "")
-                    period = status.get("period", "")
-                    badge += f" — Q{period} {clock}"
-                elif status_state == "post":
-                    badge = "✅ Final"
+            # build score data
+            competitors = comp.get("competitors", [])
+
+            home_score = "-"
+            away_score = "-"
+            home_team = "HOME"
+            away_team = "AWAY"
+
+            for c in competitors:
+                team = c.get("team", {}).get("abbreviation", "?")
+                score = c.get("score", "-")
+
+                if c.get("homeAway") == "home":
+                    home_team = team
+                    home_score = score
                 else:
-                    badge = f"🕒 {time_str}"
+                    away_team = team
+                    away_score = score
 
-                st.markdown(f"**`{game_id}`** | 🏀 {short_name}")
-                st.markdown(f"{badge}")
-                st.markdown(f"📊 {score_str}")
+            # badge logic (same style as NBA block)
+            if status_state == "in":
+                badge = f"🔴 LIVE — Q{status.get('period', '')} {status.get('displayClock', '')}"
+            elif status_state == "post":
+                badge = "✅ Final"
+            else:
+                badge = f"🕒 {et_dt.strftime('%H:%M ET')}"
+
+            games.append({
+                "gameId": game_id,
+                "matchup": f"{away_team} @ {home_team}",
+                "badge": badge,
+                "score": f"🏠 {home_team} {home_score}  |  ✈️ {away_team} {away_score}",
+                "time": et_dt.strftime("%H:%M")
+            })
+
+        if games:
+            st.success(f"Found {len(games)} game(s) on {selected_date}")
+
+            for g in sorted(games, key=lambda x: x["time"]):
+
+                st.markdown(f"**`{g['gameId']}`** | 🏀 {g['matchup']}")
+                st.markdown(f"{g['badge']}")
+                st.markdown(f"📊 {g['score']}")
                 st.markdown("---")
 
+        else:
+            st.warning(f"No WNBA games found for {selected_date}.")
 
 # =========================
 # MODE 2 — GAME FEED
