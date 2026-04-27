@@ -191,8 +191,6 @@ if mode == "Game Feed":
         status = comp.get("status", {})
         status_detail = status.get("type", {}).get("detail", "")
 
-        st.subheader(f"🏀 {away_abbr} @ {home_abbr} — {status_detail}")
-
         # ── Play-by-play ─────────────────────────────────────────
         plays_raw = data.get("plays", [])
 
