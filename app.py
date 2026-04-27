@@ -6,13 +6,12 @@ from zoneinfo import ZoneInfo
 # =========================
 # TITLE
 # =========================
-st.title("🏀 WNBA Dashboard")
+st.title("WNBA Dashboard")
 
 # =========================
 # ESPN API BASE URLS
 # =========================
 ESPN_SCOREBOARD = "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard"
-ESPN_PBP = "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/playbyplay"
 ESPN_SUMMARY = "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/summary"
 
 HEADERS = {
@@ -87,9 +86,11 @@ if mode == "Schedule":
             comp = competitions[0] if competitions else {}
 
             # time
-            date_raw = comp.get("date", "")
-            et_dt = convert_to_et(date_raw)
+            et_dt = convert_to_et(comp.get("date", ""))
             if not et_dt:
+                continue
+
+            if et_dt.date() != selected_date:
                 continue
 
             time_str = et_dt.strftime("%H:%M ET")
@@ -101,11 +102,11 @@ if mode == "Schedule":
             away = None
 
             for c in competitors:
-                name = c.get("team", {}).get("abbreviation", "?")
+                team = c.get("team", {}).get("abbreviation", "?")
                 if c.get("homeAway") == "home":
-                    home = name
+                    home = team
                 else:
-                    away = name
+                    away = team
 
             if not home or not away:
                 continue
@@ -119,9 +120,10 @@ if mode == "Schedule":
 
         if games:
             for game in sorted(games, key=lambda x: x["sort_time"]):
-                st.write(f"{game['gameId']} | 🏀 {game['teams']} | 🕒 {game['time']}")
+                st.write(f"{game['gameId']} | {game['teams']} | {game['time']}")
         else:
             st.warning("No games found for selected date")
+
 
 # =========================
 # MODE 2 — GAME FEED
@@ -164,7 +166,6 @@ if mode == "Game Feed":
             st.error("Please enter a valid ESPN Game ID.")
             st.stop()
 
-        # Fetch play-by-play via ESPN summary endpoint (most reliable for PBP)
         url = f"{ESPN_SUMMARY}?event={game_id.strip()}"
 
         try:
@@ -175,57 +176,48 @@ if mode == "Game Feed":
             st.error(f"Failed to fetch game data: {e}")
             st.stop()
 
-        # ── Game header ──────────────────────────────────────────
         header = data.get("header", {})
-        competitions = header.get("competitions", [{}])
-        comp = competitions[0] if competitions else {}
+        comp = header.get("competitions", [{}])[0]
 
         competitors = comp.get("competitors", [])
         team_labels = {}
+
         for c in competitors:
             team_labels[c.get("homeAway")] = c.get("team", {}).get("abbreviation", "?")
 
         away_abbr = team_labels.get("away", "Away")
         home_abbr = team_labels.get("home", "Home")
 
-        status = comp.get("status", {})
-        status_detail = status.get("type", {}).get("detail", "")
+        status = comp.get("status", {}).get("type", {}).get("detail", "")
 
-        st.subheader(f"🏀 {away_abbr} @ {home_abbr} — {status_detail}")
+        st.subheader(f"{away_abbr} @ {home_abbr} — {status}")
 
-        # ── Play-by-play ─────────────────────────────────────────
         plays_raw = data.get("plays", [])
 
         if not plays_raw:
-            st.warning("No play-by-play data available for this game yet.")
+            st.warning("No play-by-play data available.")
             st.stop()
 
-        # Parse time filters
         START_DT = None
         END_DT = None
+
         if USE_TIME_FILTER and START_TIME and END_TIME:
-            try:
-                START_DT = datetime.fromisoformat(START_TIME).replace(tzinfo=ZoneInfo("America/New_York"))
-                END_DT = datetime.fromisoformat(END_TIME).replace(tzinfo=ZoneInfo("America/New_York"))
-            except Exception:
-                st.error("Invalid time format. Use YYYY-MM-DD HH:MM")
-                st.stop()
+            START_DT = datetime.fromisoformat(START_TIME).replace(tzinfo=ZoneInfo("America/New_York"))
+            END_DT = datetime.fromisoformat(END_TIME).replace(tzinfo=ZoneInfo("America/New_York"))
 
         events = []
 
         for play in plays_raw:
 
-            period_obj = play.get("period", {})
-            period = period_obj.get("number", 0)
-            clock_display = play.get("clock", {}).get("displayValue", "")
-            desc = play.get("text", "No description")
+            period = play.get("period", {}).get("number", 0)
+            clock = play.get("clock", {}).get("displayValue", "")
+            desc = play.get("text", "")
             score_home = play.get("homeScore", "-")
             score_away = play.get("awayScore", "-")
-            wall_clock_raw = play.get("wallclock", "")
+            wall_clock = play.get("wallclock", "")
 
-            actual_dt = convert_to_et(wall_clock_raw) if wall_clock_raw else None
+            actual_dt = convert_to_et(wall_clock) if wall_clock else None
 
-            # Quarter filter
             if USE_QUARTER_FILTER and TARGET_QUARTERS:
                 if period >= 5:
                     if "OT" not in TARGET_QUARTERS:
@@ -234,34 +226,33 @@ if mode == "Game Feed":
                     if period not in TARGET_QUARTERS:
                         continue
 
-            # Time filter
             if USE_TIME_FILTER and actual_dt and START_DT and END_DT:
                 if not (START_DT <= actual_dt <= END_DT):
                     continue
 
             events.append({
                 "period": period,
-                "clock": clock_display,
+                "clock": clock,
                 "desc": desc,
                 "score": f"{away_abbr} {score_away} – {home_abbr} {score_home}",
-                "time": convert_to_et_str(wall_clock_raw) if wall_clock_raw else None,
-                "type": play.get("type", {}).get("text", ""),
+                "time": convert_to_et_str(wall_clock) if wall_clock else None,
+                "type": play.get("type", {}).get("text", "")
             })
 
-        # ── Output ───────────────────────────────────────────────
         if not events:
             st.warning("No plays matched the selected filters.")
         else:
             for e in events:
-                label = f"🔥 OT" if e["period"] >= 5 else f"🏀 Q{e['period']}"
 
-                st.write(f"**{label} | ⏱️ {e['clock']}**")
-                st.write(f"📊 Score: {e['score']}")
+                label = f"OT" if e["period"] >= 5 else f"Q{e['period']}"
+
+                st.write(f"{label} | {e['clock']}")
+                st.write(f"Score: {e['score']}")
                 if e["type"]:
-                    st.write(f"🏷️ Type: {e['type']}")
-                st.write(f"📌 {e['desc']}")
+                    st.write(f"Type: {e['type']}")
+                st.write(e["desc"])
                 if e["time"]:
-                    st.success(f"🕒 {e['time']}")
+                    st.write(e["time"])
                 st.markdown("---")
 
             st.success(f"Loaded {len(events)} play(s)")
