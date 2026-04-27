@@ -128,9 +128,7 @@ if mode == "Schedule":
 # =========================
 if mode == "Game Feed":
 
-    game_id = st.text_input("Enter ESPN Game ID", "")
-
-    st.caption("Tip: Get the Game ID from the Schedule view above, or from an ESPN WNBA game URL (e.g. espn.com/wnba/game/_/gameId/**401244185**)")
+    game_id = st.text_input("Enter Game ID", "")
 
     USE_QUARTER_FILTER = st.checkbox("Filter by Quarter", value=False)
     TARGET_QUARTERS = []
