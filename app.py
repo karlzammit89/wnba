@@ -51,10 +51,7 @@ def convert_to_et_str(raw_time):
 # =========================
 if mode == "Schedule":
 
-    date_input = st.text_input(
-        "Enter date (YYYY-MM-DD)",
-        datetime.now(ZoneInfo("America/New_York")).strftime("%Y-%m-%d")
-    )
+    date_input = st.text_input("Enter date (YYYY-MM-DD)", datetime.now(ZoneInfo("America/New_York")).strftime("%Y-%m-%d"))
 
     if st.button("Load Games"):
 
@@ -77,69 +74,54 @@ if mode == "Schedule":
 
         events = data.get("events", [])
 
-        games = []
-
-        for event in events:
-
-            game_id = event.get("id", "N/A")
-            name = event.get("name", "Unknown Matchup")
-            short_name = event.get("shortName", name)
-
-            comp = (event.get("competitions") or [{}])[0]
-
-            status = comp.get("status", {}).get("type", {})
-            status_state = status.get("state", "")
-            status_detail = status.get("detail", "")
-
-            et_dt = convert_to_et(comp.get("date", ""))
-            if not et_dt:
-                continue
-
-            # filter by selected date (ET)
-            if et_dt.date() != selected_date:
-                continue
-
-            # build score data
-            competitors = comp.get("competitors", [])
-
-            home_score = "-"
-            away_score = "-"
-            home_team = "HOME"
-            away_team = "AWAY"
-
-            for c in competitors:
-                team = c.get("team", {}).get("abbreviation", "?")
-                score = c.get("score", "-")
-
-                if c.get("homeAway") == "home":
-                    home_team = team
-                    home_score = score
-                else:
-                    away_team = team
-                    away_score = score
-
-            # badge logic (same style as NBA block)
-            if status_state == "in":
-                badge = f"🔴 LIVE — Q{status.get('period', '')} {status.get('displayClock', '')}"
-            elif status_state == "post":
-                badge = "✅ Final"
-            else:
-                badge = f"🕒 {et_dt.strftime('%H:%M ET')}"
-
-            games.append({
-                "gameId": game_id,
-                "matchup": f"{away_team} @ {home_team}",
-                "badge": badge,
-                "score": f"🏠 {home_team} {home_score}  |  ✈️ {away_team} {away_score}",
-                "time": et_dt.strftime("%H:%M")
-            })
-
-        if games:
-            for game in sorted(games, key=lambda x: x["time"]):
-            st.write(f"{game['gameId']} | 🏀 {game['matchup']} | 🕒 {game['time']} (ET)")
+        if not events:
+            st.warning(f"No WNBA games found for {selected_date}.")
         else:
-            st.warning("No games found for selected ET date")
+            st.success(f"Found {len(events)} game(s) on {selected_date}")
 
+            for event in events:
+                game_id = event.get("id", "N/A")
+                name = event.get("name", "Unknown Matchup")
+                short_name = event.get("shortName", name)
+
+                competitions = event.get("competitions", [{}])
+                comp = competitions[0] if competitions else {}
+
+                status = comp.get("status", {})
+                status_detail = status.get("type", {}).get("detail", "")
+                status_state = status.get("type", {}).get("state", "")  # pre / in / post
+
+                # Game time
+                date_raw = comp.get("date", "")
+                et_dt = convert_to_et(date_raw)
+                time_str = et_dt.strftime("%H:%M ET") if et_dt else "TBD"
+
+                # Score
+                competitors = comp.get("competitors", [])
+                score_parts = []
+                for c in competitors:
+                    team_name = c.get("team", {}).get("abbreviation", "?")
+                    score = c.get("score", "-")
+                    ha = "🏠" if c.get("homeAway") == "home" else "✈️"
+                    score_parts.append(f"{ha} {team_name} {score}")
+
+                score_str = "  |  ".join(score_parts) if score_parts else "N/A"
+
+                # Status badge
+                if status_state == "in":
+                    badge = "🔴 LIVE"
+                    clock = status.get("displayClock", "")
+                    period = status.get("period", "")
+                    badge += f" — Q{period} {clock}"
+                elif status_state == "post":
+                    badge = "✅ Final"
+                else:
+                    badge = f"🕒 {time_str}"
+
+                st.markdown(f"**`{game_id}`** | 🏀 {short_name}")
+                st.markdown(f"{badge}")
+                st.markdown(f"📊 {score_str}")
+                st.markdown("---")
 
 
 # =========================
