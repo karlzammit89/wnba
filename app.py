@@ -262,4 +262,4 @@ if mode == "Game Feed":
                     st.success(f"🕒 {e['time']}")
                 st.markdown("---")
 
-            st.success(f"Loaded {len(events)} play(s)")
+            st.success(f"Loaded {len(events)} events")
