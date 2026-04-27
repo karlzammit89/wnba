@@ -118,7 +118,7 @@ if mode == "Schedule":
                 else:
                     badge = f"🕒 {time_str}"
 
-                st.markdown(f"`{game_id}` | 🏀 {short_name}")
+                st.markdown(f"`{game['gameId']} | 🏀 {game['matchup']} | 🕒 {game['time']} (ET)")
                 st.markdown(f"{badge}")
                 st.markdown(f"📊 {score_str}")
                 st.markdown("---")
