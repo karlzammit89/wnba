@@ -135,17 +135,12 @@ if mode == "Schedule":
             })
 
         if games:
-            st.success(f"Found {len(games)} game(s) on {selected_date}")
-
-            for g in sorted(games, key=lambda x: x["time"]):
-
-                st.markdown(f"**`{g['gameId']}`** | 🏀 {g['matchup']}")
-                st.markdown(f"{g['badge']}")
-                st.markdown(f"📊 {g['score']}")
-                st.markdown("---")
-
+            for game in sorted(games, key=lambda x: x["time"]):
+            st.write(f"{game['gameId']} | 🏀 {game['matchup']} | 🕒 {game['time']} (ET)")
         else:
-            st.warning(f"No WNBA games found for {selected_date}.")
+            st.warning("No games found for selected ET date")
+
+
 
 # =========================
 # MODE 2 — GAME FEED
