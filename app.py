@@ -375,9 +375,6 @@ if st.session_state.selected_game_id:
         if home_id:
             st.image(wnba_logo(home_id), width=60)
 
-    if status_detail:
-        st.caption(status_detail)
-
     st.divider()
 
     # --- Filter defaults ---
