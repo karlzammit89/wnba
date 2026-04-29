@@ -24,16 +24,16 @@ def wnba_logo(team_id) -> str:
 
 # Scoring play emojis — only shown when score actually changed
 SCORING_EMOJI = {
-    "three point": "🔥",
-    "3-point":     "🔥",
-    "three-point": "🔥",
-    "dunk":        "💥",
-    "layup":       "🟢",
-    "jump shot":   "🟢",
-    "free throw":  "🎯",
-    "jumper":      "🟢",
-    "hook":        "🟢",
-    "tip shot":    "🟢",
+    "three point": "3️⃣",
+    "3-point":     "3️⃣",
+    "three-point": "3️⃣",
+    "dunk":        "2️⃣",
+    "layup":       "2️⃣",
+    "jump shot":   "2️⃣",
+    "free throw":  "1️⃣",
+    "jumper":      "2️⃣",
+    "hook":        "2️⃣",
+    "tip shot":    "2️⃣",
 }
 
 # Non-scoring play emojis — always shown
@@ -41,11 +41,11 @@ PLAY_EMOJI = {
     "turnover":    "❌",
     "steal":       "🏃",
     "block":       "🚫",
-    "rebound":     "🔄",
+    "rebound":     "🗼",
     "foul":        "🟡",
     "substitution":"🔁",
     "sub ":        "🔁",
-    "timeout":     "⏸️",
+    "timeout":     "⏳",
     "violation":   "🚨",
     "jump ball":   "⬆️",
 }
@@ -151,11 +151,11 @@ def fetch_schedule(date_str: str) -> list:
 
         if is_live:
             disp_clock = status.get("displayClock", "")
-            status_badge = f"🔴 LIVE — Q{period} {disp_clock}"
+            status_badge = f"LIVE — Q{period} {disp_clock}"
         elif is_final:
-            status_badge = "✅ Final"
+            status_badge = "Final"
         else:
-            status_badge = "🗓️ Scheduled"
+            status_badge = "Scheduled"
 
         games.append({
             "gameId":     game_id,
@@ -512,7 +512,7 @@ else:
         home_score_html = f'<span class="sched-score">{g["home_score"]}</span>' if g["is_live_or_final"] else ""
         ot_badge        = ' <span class="sched-extra">OT</span>' if g["is_ot"] else ""
         # Always show: tip-off time ET · status · OT badge
-        meta = f'🕒 {g["time_str"]} &nbsp;·&nbsp; {g["status_badge"]}{ot_badge}'
+        meta = f' {g["time_str"]} &nbsp;·&nbsp; {g["status_badge"]}{ot_badge}'
 
         inner_html = f"""
 <div class="sched-team-row">
