@@ -18,23 +18,32 @@ ESPN_SCOREBOARD = "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba
 ESPN_SUMMARY    = "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/summary"
 ESPN_HEADERS    = {"User-Agent": "Mozilla/5.0 (compatible; WNBA-Dashboard/1.0)"}
 
-def wnba_logo(team_id) -> str:
-    # ESPN WNBA team logo CDN — correct path (no /scoreboard/ subfolder)
+# ESPN abbreviation slugs for new 2026 expansion teams whose numeric IDs
+# are not yet registered in the ESPN CDN logo paths.
+_WNBA_ABBR_OVERRIDES = {
+    "POR": "portland",   # Portland Fire
+    "TOR": "tor",        # Toronto Tempo
+}
+
+def wnba_logo(team_id, team_abbr: str = "") -> str:
+    """Return ESPN CDN logo URL. Uses abbr-based slug for new expansion teams."""
+    slug = _WNBA_ABBR_OVERRIDES.get((team_abbr or "").upper())
+    if slug:
+        return f"https://a.espncdn.com/i/teamlogos/wnba/500/{slug}.png"
     return f"https://a.espncdn.com/i/teamlogos/wnba/500/{team_id}.png"
 
 # Scoring play emojis — only shown when score actually changed
 SCORING_EMOJI = {
-    "three point": "3️⃣",
-    "3-point":     "3️⃣",
-    "three-point": "3️⃣",
-    "dunk":        "2️⃣",
-    "layup":       "2️⃣",
-    "two point":   "2️⃣",
-    "jump shot":   "2️⃣",
-    "free throw":  "1️⃣",
-    "jumper":      "2️⃣",
-    "hook":        "2️⃣",
-    "tip shot":    "2️⃣",
+    "three point": "🔥",
+    "3-point":     "🔥",
+    "three-point": "🔥",
+    "dunk":        "💥",
+    "layup":       "🟢",
+    "jump shot":   "🟢",
+    "free throw":  "🎯",
+    "jumper":      "🟢",
+    "hook":        "🟢",
+    "tip shot":    "🟢",
 }
 
 # Non-scoring play emojis — always shown
@@ -42,11 +51,11 @@ PLAY_EMOJI = {
     "turnover":    "❌",
     "steal":       "🏃",
     "block":       "🚫",
-    "rebound":     "🗼",
+    "rebound":     "🔄",
     "foul":        "🟡",
     "substitution":"🔁",
     "sub ":        "🔁",
-    "timeout":     "⏳",
+    "timeout":     "⏸️",
     "violation":   "🚨",
     "jump ball":   "⬆️",
 }
@@ -152,11 +161,11 @@ def fetch_schedule(date_str: str) -> list:
 
         if is_live:
             disp_clock = status.get("displayClock", "")
-            status_badge = f"LIVE — Q{period} {disp_clock}"
+            status_badge = f"🔴 LIVE — Q{period} {disp_clock}"
         elif is_final:
-            status_badge = "Final"
+            status_badge = "✅ Final"
         else:
-            status_badge = "Scheduled"
+            status_badge = "🗓️ Scheduled"
 
         games.append({
             "gameId":     game_id,
@@ -165,8 +174,8 @@ def fetch_schedule(date_str: str) -> list:
             "home_abbr":  home_abbr,
             "away_id":    away_id,
             "home_id":    home_id,
-            "away_logo":  wnba_logo(away_id) if away_id else "",
-            "home_logo":  wnba_logo(home_id) if home_id else "",
+            "away_logo":  wnba_logo(away_id, away_abbr),
+            "home_logo":  wnba_logo(home_id, home_abbr),
             "away_score": away_score,
             "home_score": home_score,
             "time_str":   time_str,       # always the scheduled tip-off time in ET
@@ -361,7 +370,7 @@ if st.session_state.selected_game_id:
     c1, c2, c3 = st.columns([1, 6, 1])
     with c1:
         if away_id:
-            st.image(wnba_logo(away_id), width=60)
+            st.image(wnba_logo(away_id, away_abbr), width=60)
     with c2:
         st.markdown(
             f"""<div style="display:flex;align-items:center;justify-content:center;
@@ -374,7 +383,10 @@ if st.session_state.selected_game_id:
         )
     with c3:
         if home_id:
-            st.image(wnba_logo(home_id), width=60)
+            st.image(wnba_logo(home_id, home_abbr), width=60)
+
+    if status_detail:
+        st.caption(status_detail)
 
     st.divider()
 
@@ -510,7 +522,7 @@ else:
         home_score_html = f'<span class="sched-score">{g["home_score"]}</span>' if g["is_live_or_final"] else ""
         ot_badge        = ' <span class="sched-extra">OT</span>' if g["is_ot"] else ""
         # Always show: tip-off time ET · status · OT badge
-        meta = f' {g["time_str"]} &nbsp;·&nbsp; {g["status_badge"]}{ot_badge}'
+        meta = f'🕒 {g["time_str"]} &nbsp;·&nbsp; {g["status_badge"]}{ot_badge}'
 
         inner_html = f"""
 <div class="sched-team-row">
