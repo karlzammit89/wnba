@@ -19,21 +19,21 @@ ESPN_SUMMARY    = "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba
 ESPN_HEADERS    = {"User-Agent": "Mozilla/5.0 (compatible; WNBA-Dashboard/1.0)"}
 
 def wnba_logo(team_id) -> str:
-    # ESPN team logo CDN (same pattern as NBA but via ESPN's assets)
-    return f"https://a.espncdn.com/i/teamlogos/wnba/500/scoreboard/{team_id}.png"
+    # ESPN WNBA team logo CDN — correct path (no /scoreboard/ subfolder)
+    return f"https://a.espncdn.com/i/teamlogos/wnba/500/{team_id}.png"
 
 # Scoring play emojis — only shown when score actually changed
 SCORING_EMOJI = {
-    "three point": "3️⃣",
-    "3-point":     "3️⃣",
-    "three-point": "3️⃣",
-    "dunk":        "2️⃣",
-    "layup":       "2️⃣",
-    "jump shot":   "2️⃣",
-    "free throw":  "1️⃣",
-    "jumper":      "2️⃣",
-    "hook":        "2️⃣",
-    "tip shot":    "2️⃣",
+    "three point": "🔥",
+    "3-point":     "🔥",
+    "three-point": "🔥",
+    "dunk":        "💥",
+    "layup":       "🟢",
+    "jump shot":   "🟢",
+    "free throw":  "🎯",
+    "jumper":      "🟢",
+    "hook":        "🟢",
+    "tip shot":    "🟢",
 }
 
 # Non-scoring play emojis — always shown
@@ -41,11 +41,11 @@ PLAY_EMOJI = {
     "turnover":    "❌",
     "steal":       "🏃",
     "block":       "🚫",
-    "rebound":     "🗼",
+    "rebound":     "🔄",
     "foul":        "🟡",
     "substitution":"🔁",
     "sub ":        "🔁",
-    "timeout":     "⏳",
+    "timeout":     "⏸️",
     "violation":   "🚨",
     "jump ball":   "⬆️",
 }
@@ -150,12 +150,12 @@ def fetch_schedule(date_str: str) -> list:
         is_ot      = period > 4 and (is_live or is_final)
 
         if is_live:
-            clock  = status.get("displayClock", "")
-            badge  = f"🔴 LIVE — Q{period} {clock}"
+            disp_clock = status.get("displayClock", "")
+            status_badge = f"🔴 LIVE — Q{period} {disp_clock}"
         elif is_final:
-            badge  = "✅ Final"
+            status_badge = "✅ Final"
         else:
-            badge  = f"🕒 {time_str}"
+            status_badge = "🗓️ Scheduled"
 
         games.append({
             "gameId":     game_id,
@@ -168,8 +168,8 @@ def fetch_schedule(date_str: str) -> list:
             "home_logo":  wnba_logo(home_id) if home_id else "",
             "away_score": away_score,
             "home_score": home_score,
-            "time_str":   time_str,
-            "badge":      badge,
+            "time_str":   time_str,       # always the scheduled tip-off time in ET
+            "status_badge": status_badge, # live / final / scheduled label
             "is_live_or_final": is_live or is_final,
             "is_ot":      is_ot,
             "detail":     detail,
@@ -511,7 +511,8 @@ else:
         away_score_html = f'<span class="sched-score">{g["away_score"]}</span>' if g["is_live_or_final"] else ""
         home_score_html = f'<span class="sched-score">{g["home_score"]}</span>' if g["is_live_or_final"] else ""
         ot_badge        = ' <span class="sched-extra">OT</span>' if g["is_ot"] else ""
-        meta            = f'{g["badge"]}{ot_badge}'
+        # Always show: tip-off time ET · status · OT badge
+        meta = f'🕒 {g["time_str"]} &nbsp;·&nbsp; {g["status_badge"]}{ot_badge}'
 
         inner_html = f"""
 <div class="sched-team-row">
