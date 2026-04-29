@@ -29,6 +29,7 @@ SCORING_EMOJI = {
     "three-point": "3️⃣",
     "dunk":        "2️⃣",
     "layup":       "2️⃣",
+    "two point":   "2️⃣",
     "jump shot":   "2️⃣",
     "free throw":  "1️⃣",
     "jumper":      "2️⃣",
