@@ -34,16 +34,17 @@ def wnba_logo(team_id, team_abbr: str = "") -> str:
 
 # Scoring play emojis — only shown when score actually changed
 SCORING_EMOJI = {
-    "three point": "🔥",
-    "3-point":     "🔥",
-    "three-point": "🔥",
-    "dunk":        "💥",
-    "layup":       "🟢",
-    "jump shot":   "🟢",
+    "three point": "3️⃣",
+    "3-point":     "3️⃣",
+    "three-point": "3️⃣",
+    "dunk":        "2️⃣",
+    "layup":       "2️⃣",
+    "jump shot":   "2️⃣",
+    "two point":   "2️⃣",
     "free throw":  "🎯",
-    "jumper":      "🟢",
-    "hook":        "🟢",
-    "tip shot":    "🟢",
+    "jumper":      "2️⃣",
+    "hook":        "2️⃣",
+    "tip shot":    "2️⃣",
 }
 
 # Non-scoring play emojis — always shown
@@ -51,11 +52,11 @@ PLAY_EMOJI = {
     "turnover":    "❌",
     "steal":       "🏃",
     "block":       "🚫",
-    "rebound":     "🔄",
+    "rebound":     "🗼",
     "foul":        "🟡",
     "substitution":"🔁",
     "sub ":        "🔁",
-    "timeout":     "⏸️",
+    "timeout":     "⏳",
     "violation":   "🚨",
     "jump ball":   "⬆️",
 }
