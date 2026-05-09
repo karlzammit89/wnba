@@ -26,7 +26,7 @@ _ABBR_TO_SLUG = {
     "CHI":  "chi",
     "CONN": "conn",
     "DAL":  "dal",
-    "GSV":  "gsv",       # Golden State Valkyries — ID comes back as 0
+    "GSV":  "gs",        # Golden State Valkyries — https://a.espncdn.com/i/teamlogos/wnba/500/gs.png
     "IND":  "ind",
     "LV":   "lv",
     "LA":   "la",
@@ -403,7 +403,6 @@ if st.session_state.selected_game_id:
     with c3:
         st.image(wnba_logo(home_id, home_abbr), width=60)
 
-
     st.divider()
 
     # --- Filter defaults ---
@@ -537,7 +536,6 @@ else:
         away_score_html = f'<span class="sched-score">{g["away_score"]}</span>' if g["is_live_or_final"] else ""
         home_score_html = f'<span class="sched-score">{g["home_score"]}</span>' if g["is_live_or_final"] else ""
         ot_badge        = ' <span class="sched-extra">OT</span>' if g["is_ot"] else ""
-        # Always show: tip-off time ET · status · OT badge
         meta = f'{g["time_str"]} &nbsp;·&nbsp; {g["status_badge"]}{ot_badge}'
 
         inner_html = f"""
