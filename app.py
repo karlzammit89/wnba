@@ -181,11 +181,11 @@ def fetch_schedule(date_str: str) -> list:
 
         if is_live:
             disp_clock = status.get("displayClock", "")
-            status_badge = f"🔴 LIVE — Q{period} {disp_clock}"
+            status_badge = f"LIVE — Q{period} {disp_clock}"
         elif is_final:
-            status_badge = "✅ Final"
+            status_badge = "Final"
         else:
-            status_badge = "🗓️ Scheduled"
+            status_badge = "Scheduled"
 
         games.append({
             "gameId":     game_id,
@@ -389,8 +389,7 @@ if st.session_state.selected_game_id:
     # --- Header (mirrors NBA layout) ---
     c1, c2, c3 = st.columns([1, 6, 1])
     with c1:
-        if away_id:
-            st.image(wnba_logo(away_id, away_abbr), width=60)
+        st.image(wnba_logo(away_id, away_abbr), width=60)
     with c2:
         st.markdown(
             f"""<div style="display:flex;align-items:center;justify-content:center;
@@ -402,11 +401,8 @@ if st.session_state.selected_game_id:
             unsafe_allow_html=True,
         )
     with c3:
-        if home_id:
-            st.image(wnba_logo(home_id, home_abbr), width=60)
+        st.image(wnba_logo(home_id, home_abbr), width=60)
 
-    if status_detail:
-        st.caption(status_detail)
 
     st.divider()
 
