@@ -23,7 +23,7 @@ ESPN_HEADERS    = {"User-Agent": "Mozilla/5.0 (compatible; WNBA-Dashboard/1.0)"}
 _WNBA_ABBR_OVERRIDES = {
     "POR": "portland",   # Portland Fire
     "TOR": "tor",        # Toronto Tempo
-    "GSV": "gs",         # Golden State Valkyries
+    "GSV": "gsv",        # Golden State Valkyries
 }
 
 def wnba_logo(team_id, team_abbr: str = "") -> str:
