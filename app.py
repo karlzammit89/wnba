@@ -42,13 +42,23 @@ _ABBR_TO_SLUG = {
 def wnba_logo(team_id, team_abbr: str = "") -> str:
     """
     Return ESPN CDN logo URL for a WNBA team.
-    Always prefers the abbreviation-based slug path, which is more reliable
-    than numeric IDs (some teams like GSV return id=0 from the API).
-    Falls back to numeric ID only if abbreviation is unknown.
+    Tries abbreviation slug first (covers expansion teams + GS whose id=0).
+    Also checks all known slug values in case the API abbr varies (e.g. GS vs GSV).
+    Falls back to numeric ID for established teams with valid IDs.
     """
-    slug = _ABBR_TO_SLUG.get((team_abbr or "").upper())
+    # Try exact abbreviation match first
+    abbr_upper = (team_abbr or "").upper()
+    slug = _ABBR_TO_SLUG.get(abbr_upper)
     if slug:
         return f"https://a.espncdn.com/i/teamlogos/wnba/500/{slug}.png"
+
+    # If team_id is 0 / falsy, it's almost certainly Golden State — hardcode it
+    try:
+        if not team_id or int(team_id) == 0:
+            return "https://a.espncdn.com/i/teamlogos/wnba/500/gs.png"
+    except (ValueError, TypeError):
+        return "https://a.espncdn.com/i/teamlogos/wnba/500/gs.png"
+
     # Fallback: numeric ID (works for established teams with valid IDs)
     return f"https://a.espncdn.com/i/teamlogos/wnba/500/{team_id}.png"
 
