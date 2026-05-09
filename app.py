@@ -118,6 +118,7 @@ for key, default in {
     "cached_game_id":     None,
     "filtered_events":    None,
     "filters_applied":    False,
+    "schedule_date":      None,  # None = use today; persists across game navigation
 }.items():
     if key not in st.session_state:
         st.session_state[key] = default
@@ -527,7 +528,12 @@ if st.session_state.selected_game_id:
 # ======================================================
 else:
 
-    date     = st.date_input("Select date", datetime.today(), format="YYYY-MM-DD")
+    # First open: default to today. Returning from game feed: restore last date.
+    if st.session_state.schedule_date is None:
+        st.session_state.schedule_date = datetime.now(ET).date()
+
+    date     = st.date_input("Select date", value=st.session_state.schedule_date, format="YYYY-MM-DD")
+    st.session_state.schedule_date = date  # persist selection
     date_str = date.strftime("%Y%m%d")
     st.markdown(f"## WNBA Schedule — {date.strftime('%Y-%m-%d')}")
 
