@@ -538,7 +538,7 @@ else:
         home_score_html = f'<span class="sched-score">{g["home_score"]}</span>' if g["is_live_or_final"] else ""
         ot_badge        = ' <span class="sched-extra">OT</span>' if g["is_ot"] else ""
         # Always show: tip-off time ET · status · OT badge
-        meta = f'🕒 {g["time_str"]} &nbsp;·&nbsp; {g["status_badge"]}{ot_badge}'
+        meta = f'{g["time_str"]} &nbsp;·&nbsp; {g["status_badge"]}{ot_badge}'
 
         inner_html = f"""
 <div class="sched-team-row">
