@@ -27,6 +27,7 @@ _ABBR_TO_SLUG = {
     "CONN": "conn",
     "DAL":  "dal",
     "GSV":  "gs",        # Golden State Valkyries — https://a.espncdn.com/i/teamlogos/wnba/500/gs.png
+    "GS":   "gs",        # Golden State Valkyries — alternate abbreviation returned by ESPN API
     "IND":  "ind",
     "LV":   "lv",
     "LA":   "la",
