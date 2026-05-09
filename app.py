@@ -18,19 +18,38 @@ ESPN_SCOREBOARD = "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba
 ESPN_SUMMARY    = "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/summary"
 ESPN_HEADERS    = {"User-Agent": "Mozilla/5.0 (compatible; WNBA-Dashboard/1.0)"}
 
-# ESPN abbreviation slugs for new 2026 expansion teams whose numeric IDs
-# are not yet registered in the ESPN CDN logo paths.
-_WNBA_ABBR_OVERRIDES = {
-    "POR": "portland",   # Portland Fire
-    "TOR": "tor",        # Toronto Tempo
-    "GSV": "gsv",        # Golden State Valkyries
+# ESPN CDN slug overrides — maps API abbreviation to the correct CDN path.
+# Used for any team whose numeric ESPN ID returns a broken logo (e.g. "0").
+# Expansion teams and some others need the slug path instead of the numeric ID.
+_ABBR_TO_SLUG = {
+    "ATL":  "atl",
+    "CHI":  "chi",
+    "CONN": "conn",
+    "DAL":  "dal",
+    "GSV":  "gsv",       # Golden State Valkyries — ID comes back as 0
+    "IND":  "ind",
+    "LV":   "lv",
+    "LA":   "la",
+    "MIN":  "min",
+    "NY":   "ny",
+    "PHX":  "phx",
+    "POR":  "portland",  # Portland Fire — new 2026 expansion
+    "SEA":  "sea",
+    "TOR":  "tor",       # Toronto Tempo — new 2026 expansion
+    "WSH":  "wsh",
 }
 
 def wnba_logo(team_id, team_abbr: str = "") -> str:
-    """Return ESPN CDN logo URL. Uses abbr-based slug for new expansion teams."""
-    slug = _WNBA_ABBR_OVERRIDES.get((team_abbr or "").upper())
+    """
+    Return ESPN CDN logo URL for a WNBA team.
+    Always prefers the abbreviation-based slug path, which is more reliable
+    than numeric IDs (some teams like GSV return id=0 from the API).
+    Falls back to numeric ID only if abbreviation is unknown.
+    """
+    slug = _ABBR_TO_SLUG.get((team_abbr or "").upper())
     if slug:
         return f"https://a.espncdn.com/i/teamlogos/wnba/500/{slug}.png"
+    # Fallback: numeric ID (works for established teams with valid IDs)
     return f"https://a.espncdn.com/i/teamlogos/wnba/500/{team_id}.png"
 
 # Scoring play emojis — only shown when score actually changed
