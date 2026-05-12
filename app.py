@@ -412,7 +412,7 @@ if st.session_state.selected_game_id:
                 font-size: 16px; 
                 font-weight: bold;
                 width: fit-content;
-                margin-top: -10px; /* Pulls it slightly closer to the buttons */
+                margin-top: -5px; /* Pulls it slightly closer to the buttons */
                 margin-bottom: 20px;
             ">
                 Last refresh {st.session_state.last_refresh.strftime('%H:%M:%S ET')}
