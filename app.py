@@ -391,7 +391,7 @@ if st.session_state.selected_game_id:
             st.session_state.selected_game_id = None
             st.rerun()
     with nav_col2:
-        ref_col1, ref_col2 = st.columns([1, 2])
+        ref_col1, ref_col2 = st.columns([1, 8])
         with ref_col1:
             if st.button("🔄 Refresh"):
                 st.session_state.cached_events  = None
