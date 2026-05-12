@@ -378,7 +378,7 @@ if st.session_state.selected_game_id:
     # ... (rest of your variables)
 
     # Adjusting column ratios: [Back Button, Refresh Button, Timestamp, Spacer]
-    nav_col1, nav_col2, nav_col3, _ = st.columns([1.2, 1.2, 2.5, 4])
+    nav_col1, nav_col2, nav_col3, _ = st.columns([1.2, 1.2, 1.5, 5])
     
     with nav_col1:
         if st.button("⬅ Back to Schedule", use_container_width=True):
