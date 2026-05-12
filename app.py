@@ -381,7 +381,7 @@ if st.session_state.selected_game_id:
     away_id   = st.session_state.selected_away_id
     home_id   = st.session_state.selected_home_id
 
-    nav_col1, nav_col2, _ = st.columns([1, 1, 6])
+    nav_col1, nav_col2, _ = st.columns([1, 1, 7])
     
     with nav_col1:
         if st.button("⬅ Back to Schedule"):
