@@ -380,7 +380,7 @@ if st.session_state.selected_game_id:
     away_id   = st.session_state.selected_away_id
     home_id   = st.session_state.selected_home_id
 
-    nav_col1, nav_col2 = st.columns([2, 1])
+    nav_col1, nav_col2 = st.columns([1, 5])
     with nav_col1:
         if st.button("⬅ Back to Schedule"):
             st.session_state.cached_events   = None
@@ -389,7 +389,7 @@ if st.session_state.selected_game_id:
             st.session_state.filters_applied = False
             st.session_state.selected_game_id = None
             st.rerun()
-    with nav_col1:
+    with nav_col2:
         if st.button("🔄 Refresh", help="Reload play-by-play data"):
             st.session_state.cached_events  = None
             st.session_state.cached_game_id = None
