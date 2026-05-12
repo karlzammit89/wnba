@@ -380,13 +380,21 @@ if st.session_state.selected_game_id:
     away_id   = st.session_state.selected_away_id
     home_id   = st.session_state.selected_home_id
 
-    if st.button("⬅ Back to Schedule"):
-        st.session_state.cached_events   = None
-        st.session_state.cached_game_id  = None
-        st.session_state.filtered_events = None
-        st.session_state.filters_applied = False
-        st.session_state.selected_game_id = None
-        st.rerun()
+    nav_col1, nav_col2 = st.columns([2, 1])
+    with nav_col1:
+        if st.button("⬅ Back to Schedule"):
+            st.session_state.cached_events   = None
+            st.session_state.cached_game_id  = None
+            st.session_state.filtered_events = None
+            st.session_state.filters_applied = False
+            st.session_state.selected_game_id = None
+            st.rerun()
+    with nav_col2:
+        if st.button("🔄 Refresh", help="Reload play-by-play data"):
+            st.session_state.cached_events  = None
+            st.session_state.cached_game_id = None
+            fetch_play_by_play.clear()
+            st.rerun()
 
     with st.spinner("Loading game data…"):
         away_abbr, home_abbr, away_id, home_id, status_detail, events = get_events(game_id)
@@ -532,8 +540,16 @@ else:
     if st.session_state.schedule_date is None:
         st.session_state.schedule_date = datetime.now(ET).date()
 
-    date     = st.date_input("Select date", value=st.session_state.schedule_date, format="YYYY-MM-DD")
-    st.session_state.schedule_date = date  # persist selection
+    date = st.date_input(
+        "Select date",
+        value=st.session_state.schedule_date,
+        format="YYYY-MM-DD",
+        key="schedule_date_picker",
+    )
+    # Only update session state when date actually changes — avoids double-click bug
+    if date != st.session_state.schedule_date:
+        st.session_state.schedule_date = date
+        st.rerun()
     date_str = date.strftime("%Y%m%d")
     st.markdown(f"## WNBA Schedule — {date.strftime('%Y-%m-%d')}")
 
