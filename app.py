@@ -390,7 +390,7 @@ if st.session_state.selected_game_id:
             st.session_state.selected_game_id = None
             st.rerun()
     with nav_col2:
-        if st.button("🔄 Refresh", help="Reload play-by-play data"):
+        if st.button("🔄 Refresh"):
             st.session_state.cached_events  = None
             st.session_state.cached_game_id = None
             fetch_play_by_play.clear()
