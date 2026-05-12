@@ -381,7 +381,7 @@ if st.session_state.selected_game_id:
     away_id   = st.session_state.selected_away_id
     home_id   = st.session_state.selected_home_id
 
-    nav_col1, nav_col2, nav_col3 = st.columns([1, 7, 1])
+    nav_col1, nav_col2, nav_col3 = st.columns([1, 7, 5])
     with nav_col1:
         if st.button("⬅ Back to Schedule"):
             st.session_state.cached_events   = None
