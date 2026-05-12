@@ -381,7 +381,9 @@ if st.session_state.selected_game_id:
     away_id   = st.session_state.selected_away_id
     home_id   = st.session_state.selected_home_id
 
-    nav_col1, nav_col2, nav_col3 = st.columns([2.2, 1.5, 8])
+    # Small columns to keep the buttons tight together
+    nav_col1, nav_col2, _ = st.columns([2.2, 1.5, 6])
+    
     with nav_col1:
         if st.button("⬅ Back to Schedule"):
             st.session_state.cached_events   = None
@@ -390,6 +392,7 @@ if st.session_state.selected_game_id:
             st.session_state.filters_applied = False
             st.session_state.selected_game_id = None
             st.rerun()
+            
     with nav_col2:
         if st.button("🔄 Refresh"):
             st.session_state.cached_events  = None
@@ -397,14 +400,27 @@ if st.session_state.selected_game_id:
             st.session_state.last_refresh   = datetime.now(ET)
             fetch_play_by_play.clear()
             st.rerun()
-    with nav_col3:
-        if st.session_state.last_refresh:
-            st.markdown(
-                f"<div style='text-align:center;color:#999;font-size:13px;padding-top:6px;'>"
-                f"Last refresh {st.session_state.last_refresh.strftime('%H:%M:%S ET')}"
-                f"</div>",
-                unsafe_allow_html=True,
-            )
+
+    # Place this BELOW the 'with' blocks so it appears underneath
+    if st.session_state.last_refresh:
+        st.markdown(
+            f"""
+            <div style="
+                background-color: #2e7d32; 
+                color: white; 
+                padding: 4px 12px; 
+                border-radius: 4px; 
+                font-size: 12px; 
+                font-weight: bold;
+                width: fit-content;
+                margin-top: -10px; /* Pulls it slightly closer to the buttons */
+                margin-bottom: 20px;
+            ">
+                Last refresh {st.session_state.last_refresh.strftime('%H:%M:%S ET')}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     with st.spinner("Loading game data…"):
         away_abbr, home_abbr, away_id, home_id, status_detail, events = get_events(game_id)
