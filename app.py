@@ -409,7 +409,7 @@ if st.session_state.selected_game_id:
                 color: white; 
                 padding: 4px 12px; 
                 border-radius: 4px; 
-                font-size: 12px; 
+                font-size: 16px; 
                 font-weight: bold;
                 width: fit-content;
                 margin-top: -10px; /* Pulls it slightly closer to the buttons */
