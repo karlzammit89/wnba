@@ -399,13 +399,14 @@ if st.session_state.selected_game_id:
                 <div style="
                     background-color: #2e7d32; 
                     color: white; 
-                    padding: 8px 12px; /* Slightly increased padding to align with button height */
+                    padding: 8px 12px; 
                     border-radius: 4px; 
                     font-size: 14px; 
                     font-weight: bold;
-                    width: fit-content;
+                    width: 100%;       /* Changed from fit-content to fill the column */
+                    text-align: center; /* Centers the text inside the box */
+                    display: block;    /* Ensures it behaves as a full-width block */
                     white-space: nowrap;
-                    line-height: 1.2;
                 ">
                     Last refresh {st.session_state.last_refresh.strftime('%H:%M:%S ET')}
                 </div>
