@@ -374,52 +374,44 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
 # GAME FEED VIEW
 # ======================================================
 if st.session_state.selected_game_id:
-
     game_id   = st.session_state.selected_game_id
-    away_abbr = st.session_state.selected_away_abbr
-    home_abbr = st.session_state.selected_home_abbr
-    away_id   = st.session_state.selected_away_id
-    home_id   = st.session_state.selected_home_id
+    # ... (rest of your variables)
 
-    nav_col1, nav_col2, _ = st.columns([1, 1, 7])
+    # Adjusting column ratios: [Back Button, Refresh Button, Timestamp, Spacer]
+    nav_col1, nav_col2, nav_col3, _ = st.columns([1.2, 1.2, 2.5, 4])
     
     with nav_col1:
         if st.button("⬅ Back to Schedule", use_container_width=True):
-            st.session_state.cached_events   = None
-            st.session_state.cached_game_id  = None
-            st.session_state.filtered_events = None
-            st.session_state.filters_applied = False
             st.session_state.selected_game_id = None
             st.rerun()
             
     with nav_col2:
         if st.button("🔄 Refresh", use_container_width=True):
-            st.session_state.cached_events  = None
-            st.session_state.cached_game_id = None
-            st.session_state.last_refresh   = datetime.now(ET)
+            st.session_state.last_refresh = datetime.now(ET)
             fetch_play_by_play.clear()
             st.rerun()
 
-    # Place this BELOW the 'with' blocks so it appears underneath
-    if st.session_state.last_refresh:
-        st.markdown(
-            f"""
-            <div style="
-                background-color: #2e7d32; 
-                color: white; 
-                padding: 4px 12px; 
-                border-radius: 4px; 
-                font-size: 16px; 
-                font-weight: bold;
-                width: fit-content;
-                margin-top: -5px; /* Pulls it slightly closer to the buttons */
-                margin-bottom: 20px;
-            ">
-                Last refresh {st.session_state.last_refresh.strftime('%H:%M:%S ET')}
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+    # Move the timestamp logic into nav_col3
+    with nav_col3:
+        if st.session_state.last_refresh:
+            st.markdown(
+                f"""
+                <div style="
+                    background-color: #2e7d32; 
+                    color: white; 
+                    padding: 8px 12px; /* Slightly increased padding to align with button height */
+                    border-radius: 4px; 
+                    font-size: 14px; 
+                    font-weight: bold;
+                    width: fit-content;
+                    white-space: nowrap;
+                    line-height: 1.2;
+                ">
+                    Last refresh {st.session_state.last_refresh.strftime('%H:%M:%S ET')}
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
     with st.spinner("Loading game data…"):
         away_abbr, home_abbr, away_id, home_id, status_detail, events = get_events(game_id)
