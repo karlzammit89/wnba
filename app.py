@@ -381,7 +381,7 @@ if st.session_state.selected_game_id:
     away_id   = st.session_state.selected_away_id
     home_id   = st.session_state.selected_home_id
 
-    nav_col1, nav_col2 = st.columns([1, 8])
+    nav_col1, nav_col2, nav_col3 = st.columns([2, 1, 2])
     with nav_col1:
         if st.button("⬅ Back to Schedule"):
             st.session_state.cached_events   = None
@@ -391,17 +391,20 @@ if st.session_state.selected_game_id:
             st.session_state.selected_game_id = None
             st.rerun()
     with nav_col2:
-        ref_col1, ref_col2 = st.columns([1, 8])
-        with ref_col1:
-            if st.button("🔄 Refresh"):
-                st.session_state.cached_events  = None
-                st.session_state.cached_game_id = None
-                st.session_state.last_refresh   = datetime.now(ET)
-                fetch_play_by_play.clear()
-                st.rerun()
-        with ref_col2:
-            if st.session_state.last_refresh:
-                st.caption(f"Last refresh\n{st.session_state.last_refresh.strftime('%H:%M:%S ET')}")
+        if st.button("🔄 Refresh", help="Reload play-by-play data"):
+            st.session_state.cached_events  = None
+            st.session_state.cached_game_id = None
+            st.session_state.last_refresh   = datetime.now(ET)
+            fetch_play_by_play.clear()
+            st.rerun()
+    with nav_col3:
+        if st.session_state.last_refresh:
+            st.markdown(
+                f"<div style='text-align:center;color:#999;font-size:13px;padding-top:6px;'>"
+                f"Last refresh {st.session_state.last_refresh.strftime('%H:%M:%S ET')}"
+                f"</div>",
+                unsafe_allow_html=True,
+            )
 
     with st.spinner("Loading game data…"):
         away_abbr, home_abbr, away_id, home_id, status_detail, events = get_events(game_id)
