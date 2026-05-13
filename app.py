@@ -585,8 +585,15 @@ else:
 
     cols = st.columns(2)
     for i, g in enumerate(games):
-        away_score_html = f'<span class="sched-score">{g["away_score"]}</span>' if g["is_live_or_final"] else ""
-        home_score_html = f'<span class="sched-score">{g["home_score"]}</span>' if g["is_live_or_final"] else ""
+        # 1. Check if the game is interactive
+        has_started = g["is_live_or_final"]
+        
+        # 2. Dynamic button properties
+        btn_label = f"▶  Open  {g['away_abbr']} @ {g['home_abbr']}" if has_started else "⏳ Not Started"
+        btn_help = "View live play-by-play and game summary" if has_started else "Data will be available once the game starts."
+
+        away_score_html = f'<span class="sched-score">{g["away_score"]}</span>' if has_started else ""
+        home_score_html = f'<span class="sched-score">{g["home_score"]}</span>' if has_started else ""
         ot_badge        = ' <span class="sched-extra">OT</span>' if g["is_ot"] else ""
         meta = f'{g["time_str"]} &nbsp;·&nbsp; {g["status_badge"]}{ot_badge}'
 
@@ -607,12 +614,14 @@ else:
         with cols[i % 2]:
             with st.container(border=True):
                 st.markdown(inner_html, unsafe_allow_html=True)
+                # 3. Apply the disabled state and tooltip
                 if st.button(
-                    f"▶  Open  {g['away_abbr']} @ {g['home_abbr']}",
+                    btn_label,
                     key=f"go_{g['gameId']}",
                     use_container_width=True,
+                    disabled=not has_started,
+                    help=btn_help
                 ):
-
                     st.session_state.last_refresh = datetime.now(ET)
                     
                     st.session_state.cached_events   = None
