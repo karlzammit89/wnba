@@ -455,15 +455,15 @@ if st.session_state.selected_game_id:
     )
 
     # --- Filter checkboxes ---
-    USE_QUARTER_FILTER = st.checkbox("🏀 Filter by Quarter / OT", value=False)
-    USE_TIME_FILTER    = st.checkbox("🕐 Filter by Actual Time (ET)", value=False)
-    USE_SCORING_FILTER = st.checkbox("🔥 Scoring Plays Only", value=False)
+    USE_QUARTER_FILTER = st.checkbox("🏀 Filter by Quarter / OT", value=False, key="cb_quarter")
+    USE_TIME_FILTER    = st.checkbox("🕐 Filter by Actual Time (ET)", value=False, key="cb_time")
+    USE_SCORING_FILTER = st.checkbox("🔥 Scoring Plays Only", value=False, key="cb_scoring")
 
     START_DT = END_DT = None
     selected_quarters  = []
 
     if USE_QUARTER_FILTER:
-        selected_quarters = st.multiselect("Select quarters", options=all_periods, default=[])
+        selected_quarters = st.multiselect("Select quarters", options=all_periods, default=[], key="ms_quarter")
 
     if USE_TIME_FILTER:
         def_start_date = start_def.date() if start_def else ddate.today()
@@ -488,29 +488,52 @@ if st.session_state.selected_game_id:
         START_DT = datetime.combine(start_date_input, start_time_input).replace(tzinfo=ET)
         END_DT   = datetime.combine(end_date_input,   end_time_input).replace(tzinfo=ET)
 
-    # --- Apply button ---
-    if st.button("🚀 Apply Filters"):
-        def passes(e):
-            if USE_QUARTER_FILTER:
-                if not selected_quarters or e["period_label"] not in selected_quarters:
-                    return False
-            if USE_TIME_FILTER:
-                if not e["action_dt"] or START_DT is None or END_DT is None:
-                    return False
-                if not (START_DT <= e["action_dt"] <= END_DT):
-                    return False
-            if USE_SCORING_FILTER and not e["is_scoring"]:
-                return False
-            return True
+    # --- Action Buttons ---
+    btn_col1, btn_col2, _ = st.columns([1.5, 1.5, 7])
 
-        st.session_state.filtered_events = [e for e in events if passes(e)]
-        st.session_state.filters_applied = True
+    with btn_col1:
+        if st.button("🚀 Apply Filters", use_container_width=True):
+            def passes(e):
+                if USE_QUARTER_FILTER:
+                    if not selected_quarters or e["period_label"] not in selected_quarters:
+                        return False
+                if USE_TIME_FILTER:
+                    if not e["action_dt"] or START_DT is None or END_DT is None:
+                        return False
+                    if not (START_DT <= e["action_dt"] <= END_DT):
+                        return False
+                if USE_SCORING_FILTER and not e["is_scoring"]:
+                    return False
+                return True
 
-    filters_applied = st.session_state.filters_applied
-    filtered        = st.session_state.filtered_events if filters_applied else events
+            st.session_state.filtered_events = [e for e in events if passes(e)]
+            st.session_state.filters_applied = True
+            st.rerun()
+
+    with btn_col2:
+        def reset_filters():
+            # Reset the application state
+            st.session_state.filters_applied = False
+            st.session_state.filtered_events = None
+            # Reset the widget values directly via their keys
+            st.session_state.cb_quarter = False
+            st.session_state.cb_time = False
+            st.session_state.cb_scoring = False
+            if "ms_quarter" in st.session_state:
+                st.session_state.ms_quarter = []
+            # Reset date/time inputs to defaults if they exist in state
+            for key in ["tf_start_date", "tf_end_date", "tf_start_time", "tf_end_time"]:
+                if key in st.session_state:
+                    del st.session_state[key]
+
+        st.button("🗑️ Remove Filters", use_container_width=True, on_click=reset_filters)
+
+    # --- Data Selection ---
+    filters_active = st.session_state.get("filters_applied", False)
+    filtered = st.session_state.get("filtered_events") if filters_active else events
 
     # --- Info banners ---
-    if filters_applied:
+    if filters_active:
         total   = len(events)
         showing = len(filtered)
 
