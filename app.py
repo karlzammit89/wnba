@@ -6,8 +6,8 @@ from zoneinfo import ZoneInfo
 # =========================
 # PAGE CONFIG & TITLE
 # =========================
-st.set_page_config(page_title="WNBA Dashboard", page_icon="🏀", layout="wide")
-st.title("🏀 WNBA Dashboard")
+st.set_page_config(page_title="WNBA Play by Play", page_icon="🏀", layout="wide")
+st.title("🏀 WNBA Play by Play")
 
 # =========================
 # CONSTANTS
