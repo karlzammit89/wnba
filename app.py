@@ -120,6 +120,13 @@ for key, default in {
     "filters_applied":    False,
     "schedule_date":      None,  # None = use today; persists across game navigation
     "last_refresh":       None,  # ET datetime of last manual refresh
+    # Snapshots of which filters were active at last Apply — drives banners
+    "snap_quarter":       False,
+    "snap_time":          False,
+    "snap_scoring":       False,
+    "snap_quarter_labels":[],
+    "snap_start_dt":      None,
+    "snap_end_dt":        None,
 }.items():
     if key not in st.session_state:
         st.session_state[key] = default
@@ -375,38 +382,40 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
 # ======================================================
 if st.session_state.selected_game_id:
     game_id   = st.session_state.selected_game_id
-    # ... (rest of your variables)
 
     # Adjusting column ratios: [Back Button, Refresh Button, Timestamp, Spacer]
     nav_col1, nav_col2, nav_col3, _ = st.columns([1.3, 1, 1.3, 6.4])
-    
+
     with nav_col1:
         if st.button("⬅ Back to Schedule", use_container_width=True):
             st.session_state.selected_game_id = None
             st.session_state.last_refresh = None  # Clear the old timestamp
             st.rerun()
-            
+
     with nav_col2:
         if st.button("🔄 Refresh", use_container_width=True):
-            st.session_state.last_refresh = datetime.now(ET)
+            st.session_state.last_refresh    = datetime.now(ET)
+            st.session_state.cached_events   = None
+            st.session_state.cached_game_id  = None
+            st.session_state.filtered_events = None
+            st.session_state.filters_applied = False
             fetch_play_by_play.clear()
             st.rerun()
 
-    # Move the timestamp logic into nav_col3
     with nav_col3:
         if st.session_state.last_refresh:
             st.markdown(
                 f"""
                 <div style="
-                    background-color: #2e7d32; 
-                    color: white; 
-                    padding: 8px 12px; 
-                    border-radius: 4px; 
-                    font-size: 14px; 
+                    background-color: #2e7d32;
+                    color: white;
+                    padding: 8px 12px;
+                    border-radius: 4px;
+                    font-size: 14px;
                     font-weight: bold;
-                    width: 100%;       /* Changed from fit-content to fill the column */
-                    text-align: center; /* Centers the text inside the box */
-                    display: block;    /* Ensures it behaves as a full-width block */
+                    width: 100%;
+                    text-align: center;
+                    display: block;
                     white-space: nowrap;
                 ">
                     Last refresh {st.session_state.last_refresh.strftime('%H:%M:%S ET')}
@@ -508,31 +517,44 @@ if st.session_state.selected_game_id:
 
             st.session_state.filtered_events = [e for e in events if passes(e)]
             st.session_state.filters_applied = True
+            # Snapshot exactly which filters were active at Apply time (drives banners)
+            st.session_state.snap_quarter        = USE_QUARTER_FILTER
+            st.session_state.snap_time           = USE_TIME_FILTER
+            st.session_state.snap_scoring        = USE_SCORING_FILTER
+            st.session_state.snap_quarter_labels = list(selected_quarters)
+            st.session_state.snap_start_dt       = START_DT
+            st.session_state.snap_end_dt         = END_DT
             st.rerun()
 
     with btn_col2:
         def reset_filters():
-            # Reset the application state
             st.session_state.filters_applied = False
             st.session_state.filtered_events = None
-            # Reset the widget values directly via their keys
+            st.session_state.snap_quarter        = False
+            st.session_state.snap_time           = False
+            st.session_state.snap_scoring        = False
+            st.session_state.snap_quarter_labels = []
+            st.session_state.snap_start_dt       = None
+            st.session_state.snap_end_dt         = None
             st.session_state.cb_quarter = False
             st.session_state.cb_time = False
             st.session_state.cb_scoring = False
             if "ms_quarter" in st.session_state:
                 st.session_state.ms_quarter = []
-            # Reset date/time inputs to defaults if they exist in state
             for key in ["tf_start_date", "tf_end_date", "tf_start_time", "tf_end_time"]:
                 if key in st.session_state:
                     del st.session_state[key]
 
-        st.button("🗑️ Remove Filters", use_container_width=True, on_click=reset_filters)
+        # Change 3: disabled when no filters are active
+        st.button("🗑️ Remove Filters", use_container_width=True,
+                  on_click=reset_filters,
+                  disabled=not st.session_state.get("filters_applied", False))
 
     # --- Data Selection ---
     filters_active = st.session_state.get("filters_applied", False)
     filtered = st.session_state.get("filtered_events") if filters_active else events
 
-    # --- Info banners ---
+    # --- Info banners — driven from Apply snapshot, not live checkbox state ---
     if filters_active:
         total   = len(events)
         showing = len(filtered)
@@ -541,36 +563,45 @@ if st.session_state.selected_game_id:
             st.warning("⚠️ No results found — please check the filters applied.")
             st.stop()
 
-        if USE_QUARTER_FILTER:
-            labels = selected_quarters if selected_quarters else ["none selected"]
+        if st.session_state.snap_quarter:
+            labels = st.session_state.snap_quarter_labels or ["none selected"]
             st.info(f"🏀 **Quarter filter:** {', '.join(labels)} — showing **{showing}** of **{total}** plays")
 
-        if USE_TIME_FILTER:
-            st.info(
-                f"🕐 **Time filter:** {START_DT.strftime('%Y-%m-%d %H:%M')} → "
-                f"{END_DT.strftime('%Y-%m-%d %H:%M')} ET — showing **{showing}** of **{total}** plays"
-            )
+        if st.session_state.snap_time:
+            s = st.session_state.snap_start_dt
+            e_ = st.session_state.snap_end_dt
+            if s and e_:
+                st.info(
+                    f"🕐 **Time filter:** {s.strftime('%Y-%m-%d %H:%M')} → "
+                    f"{e_.strftime('%Y-%m-%d %H:%M')} ET — showing **{showing}** of **{total}** plays"
+                )
 
-        if USE_SCORING_FILTER:
+        if st.session_state.snap_scoring:
             n_scoring = sum(1 for e in events if e["is_scoring"])
             st.info(f"🔥 **Scoring plays filter:** {n_scoring} scoring play(s) in game — showing **{showing}** of **{total}** plays")
 
-    # --- Render loop ---
+    # --- Render loop — single markdown block for performance ---
+    play_html_parts = []
     for e in filtered:
-        st.subheader(f"{e['emoji']} {e['period_label']} | ⏱️ {e['clock']}")
+        score_line = (
+            f"📊 <b>Score:</b> {e['score_str']} &nbsp; 🔥 <em>Scoring Play!</em>"
+            if e["is_scoring"]
+            else f"📊 <b>Score:</b> {e['score_str']}"
+        )
+        type_line  = f"<div>🏷️ <b>Type:</b> {e['type']}</div>" if e["type"] else ""
+        time_line  = f"<div>🕐 <b>Time (ET)</b> <code>{e['action_dt_str']}</code></div>" if e["action_dt_str"] != "N/A" else ""
 
-        if e["is_scoring"]:
-            st.markdown(f"📊 **Score:** {e['score_str']} &nbsp; 🔥 *Scoring Play!*")
-        else:
-            st.markdown(f"📊 **Score:** {e['score_str']}")
+        play_html_parts.append(f"""
+<div style="padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.08);">
+  <div style="font-size:1.1em;font-weight:700;margin-bottom:6px;">{e['emoji']} {e['period_label']} | ⏱️ {e['clock']}</div>
+  <div>{score_line}</div>
+  {type_line}
+  <div>📋 <b>Play:</b> {e['desc']}</div>
+  {time_line}
+</div>""")
 
-        if e["type"]:
-            st.markdown(f"🏷️ **Type:** {e['type']}")
-
-        st.markdown(f"📋 **Play:** {e['desc']}")
-        st.markdown(f"🕐 **Time (ET)** `{e['action_dt_str']}`")
-
-        st.divider()
+    if play_html_parts:
+        st.markdown("".join(play_html_parts), unsafe_allow_html=True)
 
 
 # ======================================================
@@ -608,12 +639,10 @@ else:
 
     cols = st.columns(2)
     for i, g in enumerate(games):
-        # 1. Check if the game is interactive
         has_started = g["is_live_or_final"]
-        
-        # 2. Dynamic button properties
+
         btn_label = f"▶  Open  {g['away_abbr']} @ {g['home_abbr']}" if has_started else "⏳ Not Started"
-        btn_help = "View live play-by-play and game summary" if has_started else "Data will be available once the game starts."
+        btn_help  = "View live play-by-play and game summary" if has_started else "Data will be available once the game starts."
 
         away_score_html = f'<span class="sched-score">{g["away_score"]}</span>' if has_started else ""
         home_score_html = f'<span class="sched-score">{g["home_score"]}</span>' if has_started else ""
@@ -637,16 +666,14 @@ else:
         with cols[i % 2]:
             with st.container(border=True):
                 st.markdown(inner_html, unsafe_allow_html=True)
-                # 3. Apply the disabled state and tooltip
                 if st.button(
                     btn_label,
                     key=f"go_{g['gameId']}",
                     use_container_width=True,
                     disabled=not has_started,
-                    help=btn_help
+                    help=btn_help,
                 ):
-                    st.session_state.last_refresh = datetime.now(ET)
-                    
+                    st.session_state.last_refresh    = datetime.now(ET)
                     st.session_state.cached_events   = None
                     st.session_state.cached_game_id  = None
                     st.session_state.filtered_events = None
