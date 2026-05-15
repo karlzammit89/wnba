@@ -580,28 +580,22 @@ if st.session_state.selected_game_id:
             n_scoring = sum(1 for e in events if e["is_scoring"])
             st.info(f"🔥 **Scoring plays filter:** {n_scoring} scoring play(s) in game — showing **{showing}** of **{total}** plays")
 
-    # --- Render loop — single markdown block for performance ---
-    play_html_parts = []
+    # --- Render loop ---
     for e in filtered:
-        score_line = (
-            f"📊 <b>Score:</b> {e['score_str']} &nbsp; 🔥 <em>Scoring Play!</em>"
-            if e["is_scoring"]
-            else f"📊 <b>Score:</b> {e['score_str']}"
-        )
-        type_line  = f"<div>🏷️ <b>Type:</b> {e['type']}</div>" if e["type"] else ""
-        time_line  = f"<div>🕐 <b>Time (ET)</b> <code>{e['action_dt_str']}</code></div>" if e["action_dt_str"] != "N/A" else ""
+        st.subheader(f"{e['emoji']} {e['period_label']} | ⏱️ {e['clock']}")
 
-        play_html_parts.append(f"""
-<div style="padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.08);">
-  <div style="font-size:1.1em;font-weight:700;margin-bottom:6px;">{e['emoji']} {e['period_label']} | ⏱️ {e['clock']}</div>
-  <div>{score_line}</div>
-  {type_line}
-  <div>📋 <b>Play:</b> {e['desc']}</div>
-  {time_line}
-</div>""")
+        if e["is_scoring"]:
+            st.markdown(f"📊 **Score:** {e['score_str']} &nbsp; 🔥 *Scoring Play!*")
+        else:
+            st.markdown(f"📊 **Score:** {e['score_str']}")
 
-    if play_html_parts:
-        st.markdown("".join(play_html_parts), unsafe_allow_html=True)
+        if e["type"]:
+            st.markdown(f"🏷️ **Type:** {e['type']}")
+
+        st.markdown(f"📋 **Play:** {e['desc']}")
+        st.markdown(f"🕐 **Time (ET)** `{e['action_dt_str']}`")
+
+        st.divider()
 
 
 # ======================================================
