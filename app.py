@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+import time
 from datetime import datetime, time as dtime, date as ddate, timedelta
 from zoneinfo import ZoneInfo
 
@@ -120,6 +121,11 @@ for key, default in {
     "filters_applied":    False,
     "schedule_date":      None,  # None = use today; persists across game navigation
     "last_refresh":       None,  # ET datetime of last manual refresh
+    "force_bucket":       0,     # bumped by Refresh to bust this call's cache only
+    "selected_event_id":  None,  # ESPN event id for live score lookup
+    "selected_away_score":0,     # fallback score (from schedule at entry)
+    "selected_home_score":0,
+    "sort_newest_first":  False, # render-time sort direction
     # Snapshots of which filters were active at last Apply — drives banners
     "snap_quarter":       False,
     "snap_time":          False,
@@ -229,7 +235,7 @@ def fetch_schedule(date_str: str) -> list:
 
 
 @st.cache_data(ttl=60, show_spinner=False)
-def fetch_play_by_play(game_id: str) -> tuple:
+def fetch_play_by_play(game_id: str, cache_bucket: int = 0) -> tuple:
     """
     Returns (away_abbr, home_abbr, status_detail, plays_raw).
     Original WNBA ESPN summary fetch — logic unchanged.
@@ -276,7 +282,10 @@ def get_events(game_id: str) -> tuple:
     ):
         return st.session_state.cached_events
 
-    away_abbr, home_abbr, away_id, home_id, status_detail, plays_raw = fetch_play_by_play(game_id)
+    bucket = st.session_state.get("force_bucket", 0)
+    away_abbr, home_abbr, away_id, home_id, status_detail, plays_raw = fetch_play_by_play(game_id, cache_bucket=bucket)
+    # last_refresh updates only after a real network fetch completes
+    st.session_state.last_refresh = datetime.now(ET)
 
     prev_away = prev_home = 0
     events = []
@@ -383,8 +392,8 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
 if st.session_state.selected_game_id:
     game_id   = st.session_state.selected_game_id
 
-    # Adjusting column ratios: [Back Button, Refresh Button, Timestamp, Spacer]
-    nav_col1, nav_col2, nav_col3, _ = st.columns([1.3, 1, 1.3, 6.4])
+    # Column ratios: [Back, Refresh, Sort, Timestamp, Spacer]
+    nav_col1, nav_col2, nav_col3, nav_col4, _ = st.columns([1.3, 1, 1.3, 1.3, 5.1])
 
     with nav_col1:
         if st.button("⬅ Back to Schedule", use_container_width=True):
@@ -394,15 +403,25 @@ if st.session_state.selected_game_id:
 
     with nav_col2:
         if st.button("🔄 Refresh", use_container_width=True):
-            st.session_state.last_refresh    = datetime.now(ET)
+            # Bump bucket so fetch_play_by_play(game_id, cache_bucket=...) misses
+            # the cache for THIS call only — never .clear() (nukes all users).
+            st.session_state.force_bucket    = int(time.time() // 30) + 1
             st.session_state.cached_events   = None
             st.session_state.cached_game_id  = None
             st.session_state.filtered_events = None
             st.session_state.filters_applied = False
-            fetch_play_by_play.clear()
             st.rerun()
 
     with nav_col3:
+        # Label shows CURRENT state; clicking switches to the other.
+        sort_label = ("↑ Newest First" if st.session_state.sort_newest_first
+                      else "↓ Oldest First")
+        sort_type  = "primary" if st.session_state.sort_newest_first else "secondary"
+        if st.button(sort_label, use_container_width=True, type=sort_type):
+            st.session_state.sort_newest_first = not st.session_state.sort_newest_first
+            st.rerun()
+
+    with nav_col4:
         if st.session_state.last_refresh:
             st.markdown(
                 f"""
@@ -427,12 +446,20 @@ if st.session_state.selected_game_id:
     with st.spinner("Loading game data…"):
         away_abbr, home_abbr, away_id, home_id, status_detail, events = get_events(game_id)
 
-    # Latest scores from last play
-    if events:
-        last = events[-1]
-        away_runs, home_runs = last["away_score"], last["home_score"]
-    else:
-        away_runs = home_runs = 0
+    # Live score from the already-cached scoreboard (fetch_schedule TTL=300s)
+    # — looked up every render. Falls back to the score stored at game entry
+    # if the event isn't found or the fetch throws.
+    away_runs = st.session_state.selected_away_score
+    home_runs = st.session_state.selected_home_score
+    try:
+        _board = fetch_schedule(st.session_state.schedule_date.strftime("%Y%m%d"))
+        for _g in _board:
+            if str(_g["gameId"]) == str(st.session_state.selected_event_id):
+                away_runs = _g["away_score"]
+                home_runs = _g["home_score"]
+                break
+    except Exception:
+        pass
 
     # --- Header (mirrors NBA layout) ---
     c1, c2, c3 = st.columns([1, 6, 1])
@@ -553,6 +580,10 @@ if st.session_state.selected_game_id:
     # --- Data Selection ---
     filters_active = st.session_state.get("filters_applied", False)
     filtered = st.session_state.get("filtered_events") if filters_active else events
+    # Sort reversal happens at render time only — never mutate the stored list.
+    # Filters are applied first (above), then the reversal.
+    if st.session_state.sort_newest_first:
+        filtered = filtered[::-1]
 
     # --- Info banners — driven from Apply snapshot, not live checkbox state ---
     if filters_active:
@@ -636,7 +667,7 @@ else:
         has_started = g["is_live_or_final"]
 
         btn_label = f"▶  Open  {g['away_abbr']} @ {g['home_abbr']}" if has_started else "⏳ Not Started"
-        btn_help  = "View play-by-play" if has_started else "Data will be available once the game starts."
+        btn_help  = "View live play-by-play and game summary" if has_started else "Data will be available once the game starts."
 
         away_score_html = f'<span class="sched-score">{g["away_score"]}</span>' if has_started else ""
         home_score_html = f'<span class="sched-score">{g["home_score"]}</span>' if has_started else ""
@@ -677,4 +708,7 @@ else:
                     st.session_state.selected_home_abbr = g["home_abbr"]
                     st.session_state.selected_away_id   = g["away_id"]
                     st.session_state.selected_home_id   = g["home_id"]
+                    st.session_state.selected_event_id    = g["gameId"]
+                    st.session_state.selected_away_score  = g["away_score"]
+                    st.session_state.selected_home_score  = g["home_score"]
                     st.rerun()
