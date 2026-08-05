@@ -17,7 +17,15 @@ ET = ZoneInfo("America/New_York")
 
 ESPN_SCOREBOARD = "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard"
 ESPN_SUMMARY    = "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/summary"
-ESPN_HEADERS    = {"User-Agent": "Mozilla/5.0 (compatible; WNBA-Dashboard/1.0)"}
+ESPN_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                  "AppleWebKit/537.36 (KHTML, like Gecko) "
+                  "Chrome/122.0.0.0 Safari/537.36",
+    "Accept":          "application/json, text/plain, */*",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Referer":         "https://www.espn.com/",
+    "Origin":          "https://www.espn.com",
+}
 
 # ESPN CDN slug overrides — maps API abbreviation to the correct CDN path.
 # Used for any team whose numeric ESPN ID returns a broken logo (e.g. "0").
